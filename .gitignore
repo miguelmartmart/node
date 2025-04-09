@@ -1,0 +1,7 @@
+.qodo
+.env
+node_modules/
+.vscode
+.idea
+build
+dist
