@@ -31,16 +31,38 @@ const recursos = JSON.parse(fs.readFileSync(recursosPath, 'utf8'))
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyDrRd1QH4V4M8evpSIesbFifT-H6yWn84g')
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-latest' })
 
+
+
 function generarPromptOptimizado(pregunta) {
-  let contexto = `Eres un asistente experto en SQL Conta y SQL Obras (productos de Distrito K). Responde solo usando fuentes oficiales y fiables. Aporta pasos claros, enlaces oficiales, videotutoriales si existen, y consejos prácticos. No inventes si no conoces la respuesta.`
-  for (const clave in recursos) {
-    if (pregunta.toLowerCase().includes(clave.toLowerCase())) {
-      const extra = recursos[clave]
-      contexto += `\n\nTema detectado: ${clave}\nDocumentación: ${extra.documentacion}\nVideotutorial: ${extra.videotutorial}`
-    }
-  }
-  return `${contexto}\n\nPregunta del usuario: ${pregunta}`
+  return `
+Eres un asistente experto en SQL Conta y SQL Obras, los ERPs de Distrito K. Tu tarea es responder a usuarios que necesitan aprender a usar estas herramientas.
+
+✅ Siempre ofrece información útil, clara, directa y estructurada.
+✅ Incluye pasos si es un procedimiento.
+✅ Incluye al menos 1 enlace real de los siguientes si es posible:
+- Manuales: https://www.distritok.com/manuales/SQLConta.pdf, https://www.distritok.com/manuales/SQLObras.pdf
+- Tutoriales: https://www.distritok.com/blog/category/tutoriales/
+- Videotutoriales SQL Conta: https://www.youtube.com/watch?v=s2k-2OosTnc&list=PLZQOCXoFqVu2PyyHN6ZROMlZgKABsSrsB
+- Videotutoriales SQL Obras: https://www.youtube.com/watch?v=MbqMyOJXOWE&list=PLZQOCXoFqVu0FUM2Z5gF1nZcMgTaXt7K1
+- Canal: https://www.youtube.com/@Distritok
+
+✅ Si no sabes la respuesta, di “No tengo información precisa sobre eso” y sugiere consultar el canal de Youtube o tutoriales.
+
+✅ Formatea el texto con títulos (###), pasos numerados, listas con viñetas, y enlaces clicables.
+
+Ejemplo de formato:
+
+### Cómo crear una factura en SQL Conta
+1. Ve a “Facturación > Nueva factura”.
+2. Selecciona cliente, fecha y líneas.
+
+**Recurso recomendado:**
+https://www.distritok.com/manuales/SQLConta.pdf
+
+Pregunta del usuario: ${pregunta}
+  `.trim();
 }
+
 
 app.post('/api/gemini', async (req, res) => {
   try {

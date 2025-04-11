@@ -84,7 +84,32 @@
     </div>
   </footer>
 
+
+  <!-- Botón para abrir panel -->
+<button id="open-panel" class="fav-toggle" aria-label="Ver favoritos e historial">
+  <i class="fas fa-star"></i> Favoritos / Historial
+</button>
+
+<!-- Panel lateral oculto -->
+<aside id="favorites-panel" class="favorites-panel hidden" aria-label="Panel de favoritos e historial">
+  <header>
+    <h2>⭐ Favoritos & Historial</h2>
+    <button id="close-panel" class="close-btn" aria-label="Cerrar panel">&times;</button>
+  </header>
+
+  <section class="search-bar">
+    <input type="text" id="search-favs" placeholder="Buscar respuesta o palabra clave...">
+  </section>
+
+  <section id="favorites-list" class="fav-list">
+    <p>Cargando favoritos...</p>
+  </section>
+</aside>
+
+
   <script src="js/script.js"></script>
+  <script src="js/favorites-history.js"></script>
+
 </body>
 
 

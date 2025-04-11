@@ -6,7 +6,67 @@ const feedback = document.getElementById('feedback');
 function appendMessage(msg, className) {
   const div = document.createElement('div');
   div.className = `msg ${className}`;
-  div.innerHTML = msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+  const links = msg.match(/https?:\/\/[^\s]+/g);
+
+  // Detectar títulos (líneas que empiezan con ### o **)
+  msg = msg.replace(/"(.*?) target="_blank">/g, '" target="_blank">');
+
+  let formatted = msg
+  .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+  .replace(/^\* \*\*(.*?)\*\*:(.*)$/gm, '<li><strong>$1:</strong>$2</li>') // viñetas con negrita
+  .replace(/^\*\*(.*?)\*\*:/gm, '<strong>$1:</strong>') // otras negritas
+  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  .replace(/\n(?=\d+\.)/g, '</li><li>')                // numeradas
+  .replace(/\n/g, '<br>')
+
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+    .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>')
+
+    .replace(/\n/g, '<br>');
+
+    
+    
+   
+// Suponiendo que links es un array y formatted es una variable definida previamente
+let cleanLink = null;
+
+if (links && links.length > 0) {
+  cleanLink = links[0].replace(/[)$]+$/, '');
+}
+
+
+  if (links && className === 'bot-msg') {
+    formatted += `<div class="resource-button">
+        <a href="${cleanLink}" target="_blank" class="btn-doc">📖 Ver documentación</a>
+      </div>`;
+  }
+  if (className === 'bot-msg' && links?.length) {
+    formatted += `<div class="resource-preview">
+      <p><strong>📎 Recurso:</strong> <a href="${cleanLink}" target="_blank">${cleanLink}</a></p>
+    </div>`;
+  }
+  div.innerHTML = formatted;
+
+      // Botón ⭐ favoritos
+      if (className === "bot-msg") {
+        const favBtn = document.createElement("button");
+        favBtn.textContent = "⭐ Guardar como favorito";
+        favBtn.title = "Guardar esta respuesta en tus favoritos para consultarla después";
+        favBtn.className = "save-button";
+        favBtn.classList.add("favorite-action-btn");
+        favBtn.onclick = () => {
+          const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+          favorites.push({
+            text: msg,
+            date: new Date().toISOString()
+          });
+          localStorage.setItem("favorites", JSON.stringify(favorites));
+          favBtn.textContent = "✅";
+          setTimeout(() => (favBtn.textContent = "⭐"), 2000);
+        };
+        div.appendChild(favBtn);
+    }
+
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
@@ -36,7 +96,8 @@ input.addEventListener('paste', function (e) {
       })
         .then(res => res.json())
         .then(data => {
-          appendMessage(data.text || 'Texto no reconocido.', 'bot-msg');
+            input.value += (data.text || '') + '\n';
+            input.focus();
           updateFeedback('');
         })
         .catch(() => updateFeedback('Error al procesar imagen.'));
@@ -54,10 +115,45 @@ async function sendMessage() {
 
   try {
     const res = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text })
-    });
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `
+      Eres un asistente experto en SQL Conta y SQL Obras de Distrito K. 
+      Siempre que respondas, sigue estas pautas:
+      
+      1. Da respuestas **claras, paso a paso** y **prácticas**, incluso si son tareas complejas.
+      2. **Incluye enlaces oficiales y útiles** de recursos reales cuando sea posible. Usa solo los siguientes:
+      
+      - 📘 Manual SQL Conta: https://www.distritok.com/manuales/SQLConta.pdf
+      - 📘 Manual SQL Obras: https://www.distritok.com/manuales/SQLObras.pdf
+      - 🎬 Videotutoriales SQL Conta: https://www.youtube.com/watch?v=s2k-2OosTnc&list=PLZQOCXoFqVu2PyyHN6ZROMlZgKABsSrsB
+      - 🎬 Videotutoriales SQL Obras: https://www.youtube.com/watch?v=MbqMyOJXOWE&list=PLZQOCXoFqVu0FUM2Z5gF1nZcMgTaXt7K1
+      - 🧠 Canal oficial: https://www.youtube.com/@Distritok
+      - 📚 Blog oficial con tutoriales: https://www.distritok.com/blog/category/tutoriales/
+      - 🧪 Videotutoriales SQL Conta: https://www.distritok.com/videotutoriales/sql-conta/
+      - 📊 Transparencias SQL Conta: https://es.scribd.com/document/295436673/Descubra-SQL-Conta
+      - 🎓 Cursos oficiales: https://www.distritok.com/cursos-formacion/
+      - 🎥 Webinar SQL Conta: https://www.distritok.com/blog/webinar-una-vision-360-sobre-sql-conta/
+      
+      3. Menciona si existe un **video o página concreta** para resolver lo que te piden. Si no existe, da una solución alternativa o recomienda buscar en el manual.
+      
+      4. Evita repetir frases innecesarias como "es importante mencionar" o "como puedes ver".
+      
+      5. Siempre responde en **formato estructurado**:
+        - Título
+        - Breve explicación
+        - Paso a paso
+        - Enlace(s) directos si existen
+        - Consejo final o nota útil
+      
+      ---
+      
+      Consulta del usuario: ${text}
+          `
+        })
+      });
+      
     const data = await res.json();
     appendMessage(data.reply || 'Sin respuesta.', 'bot-msg');
   } catch (err) {
@@ -77,7 +173,9 @@ document.getElementById('imageInput').addEventListener('change', async (e) => {
   try {
     const res = await fetch('/api/ocr', { method: 'POST', body: formData });
     const data = await res.json();
-    appendMessage(data.text || 'No se pudo extraer texto.', 'bot-msg');
+    //appendMessage(data.text || 'No se pudo extraer texto.', 'bot-msg');
+    input.value += (data.text || '') + '\n';
+input.focus();
   } catch (err) {
     appendMessage('Error al procesar imagen.', 'bot-msg');
   } finally {
@@ -105,7 +203,9 @@ async function startRecording() {
         body: formData
       });
       const data = await res.json();
-      appendMessage(data.text || 'No se pudo transcribir audio.', 'bot-msg');
+      // appendMessage(data.text || 'No se pudo transcribir audio.', 'bot-msg');
+      input.value += (data.text || '') + '\n';
+input.focus();
     } catch (err) {
       appendMessage('Error al enviar audio.', 'bot-msg');
     } finally {
@@ -165,7 +265,9 @@ function startCamera() {
           method: 'POST',
           body: formData
         }).then(res => res.json()).then(data => {
-          appendMessage(data.text || 'Texto no reconocido.', 'bot-msg');
+          //appendMessage(data.text || 'Texto no reconocido.', 'bot-msg');
+          input.value += (data.text || '') + '\n';
+input.focus();
           updateFeedback('');
         }).catch(() => updateFeedback('Error cámara.'));
       }, 'image/png');
@@ -187,4 +289,3 @@ toggleBtn?.addEventListener('click', () => {
     : '<i class="fas fa-bars"></i>';   // ☰
 });
 
-  
