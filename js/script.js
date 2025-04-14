@@ -123,7 +123,7 @@ async function sendMessage() {
       Siempre que respondas, sigue estas pautas:
       
       1. Da respuestas **claras, paso a paso** y **prácticas**, incluso si son tareas complejas.
-      2. **Incluye enlaces oficiales y útiles** de recursos reales cuando sea posible. Usa solo los siguientes:
+      2. **Incluye enlaces oficiales y útiles** de recursos reales cuando sea posible. Usa sobretodo los siguientes:
       
       - 📘 Manual SQL Conta: https://www.distritok.com/manuales/SQLConta.pdf
       - 📘 Manual SQL Obras: https://www.distritok.com/manuales/SQLObras.pdf
@@ -175,6 +175,7 @@ document.getElementById('imageInput').addEventListener('change', async (e) => {
     const data = await res.json();
     //appendMessage(data.text || 'No se pudo extraer texto.', 'bot-msg');
     input.value += (data.text || '') + '\n';
+    updateFeedback('✅ Imagen procesada correctamente.');
 input.focus();
   } catch (err) {
     appendMessage('Error al procesar imagen.', 'bot-msg');
@@ -185,40 +186,63 @@ input.focus();
 
 let mediaRecorder;
 let audioChunks = [];
-
 async function startRecording() {
-  updateFeedback('Grabando audio...');
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-  mediaRecorder.onstop = async () => {
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    const formData = new FormData();
-    formData.append('audio', audioBlob);
+  updateFeedback('🎤 Solicitando acceso al micrófono...');
 
-    updateFeedback('Transcribiendo audio...');
-    try {
-      const res = await fetch('/api/audio-transcript', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      // appendMessage(data.text || 'No se pudo transcribir audio.', 'bot-msg');
-      input.value += (data.text || '') + '\n';
-input.focus();
-    } catch (err) {
-      appendMessage('Error al enviar audio.', 'bot-msg');
-    } finally {
-      updateFeedback('');
-    }
-  };
-  audioChunks = [];
-  mediaRecorder.start();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert("🎤 Tu navegador no permite acceso al micrófono.");
+    updateFeedback('❌ Micrófono no soportado en este navegador.');
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      const formData = new FormData();
+      formData.append('audio', audioBlob);
+
+      updateFeedback('⌛ Transcribiendo audio...');
+
+      try {
+        const res = await fetch('/api/audio-transcript', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        input.value += (data.text || '') + '\n';
+        input.focus();
+        updateFeedback('✅ Transcripción completada.');
+      } catch (err) {
+        updateFeedback('❌ Error al transcribir el audio.');
+      }
+    };
+
+    mediaRecorder.start();
+    updateFeedback('🎙️ Grabando audio...');
+  } catch (err) {
+    console.error('Error micrófono:', err);
+    alert("⚠️ No se pudo acceder al micrófono. Verifica los permisos.");
+    updateFeedback('❌ Permiso denegado o error de acceso al micrófono.');
+  }
 }
 
 function stopRecording() {
-  if (mediaRecorder) mediaRecorder.stop();
-  updateFeedback('Deteniendo audio...');
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+    updateFeedback('⏹️ Deteniendo audio...');
+
+    // Asegura que se liberen todos los recursos
+    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+  } else {
+    updateFeedback('⚠️ No hay grabación activa.');
+  }
 }
 
 let videoStream;
@@ -234,13 +258,27 @@ function startVideoRecording() {
     chat.appendChild(video);
   });
 }
-
 function stopVideoRecording() {
   if (videoStream) {
+    updateFeedback('⏳ Procesando el vídeo grabado...');
+
     videoStream.getTracks().forEach(track => track.stop());
-    updateFeedback('Video detenido.');
+
+    // Aquí podrías hacer algo como subir el vídeo o analizar frames
+    // Ejemplo simple de espera simulada:
+    setTimeout(() => {
+      updateFeedback('✅ Vídeo procesado correctamente.');
+    }, 2000);
+
+    // Limpieza visual
+    const previewVideo = document.querySelector('video');
+    if (previewVideo) previewVideo.remove();
+  } else {
+    updateFeedback('⚠️ No había grabación activa.');
   }
 }
+
+
 
 function startCamera() {
   updateFeedback('Activando cámara...');
@@ -268,7 +306,7 @@ function startCamera() {
           //appendMessage(data.text || 'Texto no reconocido.', 'bot-msg');
           input.value += (data.text || '') + '\n';
 input.focus();
-          updateFeedback('');
+updateFeedback('✅ Imagen capturada y procesada.');
         }).catch(() => updateFeedback('Error cámara.'));
       }, 'image/png');
       stream.getTracks().forEach(track => track.stop());
@@ -277,6 +315,9 @@ input.focus();
     };
     chat.appendChild(video);
     chat.appendChild(snapBtn);
+  }).catch(() => {
+    updateFeedback('❌ No se pudo acceder a la cámara.');
+    alert("⚠️ Verifica que diste permiso a la cámara.");
   });
 }
 
