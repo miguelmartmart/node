@@ -65,6 +65,27 @@ if (links && links.length > 0) {
           setTimeout(() => (favBtn.textContent = "⭐"), 2000);
         };
         div.appendChild(favBtn);
+        // Botón 📎 copiar al portapapeles
+// Botón 📎 copiar al portapapeles
+const copyBtn = document.createElement("button");
+copyBtn.textContent = "📎 Copiar respuesta";
+copyBtn.title = "Copiar el contenido de esta respuesta al portapapeles";
+copyBtn.className = "copy-button";
+copyBtn.classList.add("favorite-action-btn");
+copyBtn.onclick = () => {
+  const tempElement = document.createElement("div");
+  tempElement.innerHTML = msg; // usa el contenido original antes del formateo
+  const plainText = tempElement.textContent || tempElement.innerText || "";
+  navigator.clipboard.writeText(plainText).then(() => {
+    copyBtn.textContent = "✅ Copiado";
+    setTimeout(() => (copyBtn.textContent = "📎"), 2000);
+  }).catch(() => {
+    copyBtn.textContent = "❌ Error";
+  });
+};
+div.appendChild(copyBtn);
+
+
     }
 
   chat.appendChild(div);
@@ -246,37 +267,189 @@ function stopRecording() {
 }
 
 let videoStream;
-function startVideoRecording() {
-  updateFeedback('Grabando video...');
-  navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+let videoChunks = [];
+let videoRecorder;
+
+async function startVideoRecording() {
+  updateFeedback('🎥 Iniciando grabación de video...');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     videoStream = stream;
+    videoChunks = [];
+
     const video = document.createElement('video');
     video.srcObject = stream;
     video.autoplay = true;
     video.style.width = '100%';
     video.style.maxHeight = '300px';
+    video.setAttribute("id", "video-preview");
     chat.appendChild(video);
-  });
-}
-function stopVideoRecording() {
-  if (videoStream) {
-    updateFeedback('⏳ Procesando el vídeo grabado...');
 
-    videoStream.getTracks().forEach(track => track.stop());
+    videoRecorder = new MediaRecorder(stream);
+    videoRecorder.ondataavailable = e => {
+      if (e.data.size > 0) videoChunks.push(e.data);
+    };
 
-    // Aquí podrías hacer algo como subir el vídeo o analizar frames
-    // Ejemplo simple de espera simulada:
-    setTimeout(() => {
-      updateFeedback('✅ Vídeo procesado correctamente.');
-    }, 2000);
+    videoRecorder.start();
+    updateFeedback('🔴 Grabando vídeo...');
 
-    // Limpieza visual
-    const previewVideo = document.querySelector('video');
-    if (previewVideo) previewVideo.remove();
-  } else {
-    updateFeedback('⚠️ No había grabación activa.');
+    videoRecorder.onstop = async () => {
+      videoStream.getTracks().forEach(track => track.stop());
+      document.getElementById('video-preview')?.remove();
+
+      const videoBlob = new Blob(videoChunks, { type: 'video/webm' });
+      updateFeedback('🧠 Procesando vídeo con FFmpeg...');
+
+      // Cargar FFmpeg
+      const { createFFmpeg, fetchFile } = FFmpeg;
+      const ffmpeg = createFFmpeg({ log: true });
+      await ffmpeg.load();
+
+      // Escribir el archivo original
+      ffmpeg.FS('writeFile', 'input.webm', await fetchFile(videoBlob));
+
+      // Recortar los primeros 10 segundos
+      await ffmpeg.run(
+        '-i', 'input.webm',
+        '-ss', '0',
+        '-t', '10',
+        '-c:v', 'libx264',
+        '-preset', 'veryfast',
+        '-c:a', 'aac',
+        '-movflags', 'faststart',
+        'output.mp4'
+      );
+      const data = ffmpeg.FS('readFile', 'output.mp4');
+      const trimmedBlob = new Blob([data.buffer], { type: 'video/mp4' })
+      //const data = ffmpeg.FS('readFile', 'output.webm');
+      //const trimmedBlob = new Blob([data.buffer], { type: 'video/webm' });
+      const previewUrl = URL.createObjectURL(trimmedBlob);
+
+      const previewContainer = document.createElement('div');
+      previewContainer.className = 'video-preview';
+      previewContainer.innerHTML = `
+        <video controls src="${previewUrl}" style="width: 100%; max-height: 300px; margin-bottom: 8px;"></video>
+        <button class="confirm-upload">✅ Usar este vídeo</button>
+        <button class="cancel-upload">❌ Cancelar</button>
+      `;
+      chat.appendChild(previewContainer);
+      chat.scrollTop = chat.scrollHeight;
+
+      previewContainer.querySelector('.confirm-upload').onclick = () => {
+        previewContainer.remove();
+        uploadAndTranscribeVideo(trimmedBlob); // Usamos el video recortado
+      };
+
+      previewContainer.querySelector('.cancel-upload').onclick = () => {
+        previewContainer.remove();
+        updateFeedback('🚫 Vídeo descartado.');
+      };
+
+      updateFeedback('🎬 Vídeo recortado y listo. ¿Quieres enviarlo?');
+    };
+  } catch (err) {
+    console.error('Error al grabar vídeo:', err);
+    updateFeedback('❌ Error al acceder a la cámara.');
   }
 }
+
+
+function stopVideoRecording() {
+  if (!videoRecorder || videoRecorder.state === 'inactive') {
+    updateFeedback('⚠️ No hay grabación activa.');
+    return;
+  }
+
+  updateFeedback('🛑 Deteniendo grabación...');
+
+  // Detener grabación y video
+  videoRecorder.stop();
+  videoStream.getTracks().forEach(track => track.stop());
+
+  videoRecorder.onstop = () => {
+    const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+    const previewUrl = URL.createObjectURL(videoBlob);
+
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'video-preview';
+
+    previewContainer.innerHTML = `
+      <video controls src="${previewUrl}" style="width: 100%; max-height: 300px; margin-bottom: 8px;"></video>
+      <button class="confirm-upload">✅ Usar este vídeo</button>
+      <button class="cancel-upload">❌ Cancelar</button>
+    `;
+
+    chat.appendChild(previewContainer);
+    chat.scrollTop = chat.scrollHeight;
+
+    document.getElementById('video-preview')?.remove();
+
+    previewContainer.querySelector('.confirm-upload').onclick = () => {
+      previewContainer.remove();
+      uploadAndTranscribeVideo(videoBlob);
+    };
+
+    previewContainer.querySelector('.cancel-upload').onclick = () => {
+      previewContainer.remove();
+      updateFeedback('🚫 Vídeo descartado.');
+    };
+
+    updateFeedback('👁️ Vista previa generada. ¿Quieres usar este vídeo?');
+  };
+}
+
+
+async function uploadAndTranscribeVideo(videoBlob) {
+  const formData = new FormData();
+  
+  // Convertir el blob a un archivo con extensión .mp4
+  const videoFile = new File([videoBlob], "grabacion.mp4", { type: "video/mp4" });
+  formData.append('video', videoFile);
+
+  try {
+    const res = await fetch('/api/transcribe-video', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.transcription_id) {
+      updateFeedback('⌛ Transcripción en curso...');
+      pollTranscriptionStatus(data.transcription_id);
+    } else {
+      updateFeedback('❌ Error al subir el vídeo.');
+    }
+  } catch (err) {
+    console.error('Upload error:', err);
+    updateFeedback('❌ Fallo al subir el vídeo.');
+  }
+}
+
+async function pollTranscriptionStatus(id) {
+  const interval = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/transcription-status/${id}`);
+      const data = await res.json();
+
+      if (data.status === 'done') {
+        clearInterval(interval);
+        const messageInput = document.getElementById('messageInput');
+        messageInput.value += (data.text || '') + '\n';
+        messageInput.focus();
+        updateFeedback('✅ Transcripción completada y añadida al campo de entrada.');
+      } else if (data.status === 'failed') {
+        clearInterval(interval);
+        updateFeedback('❌ Falló la transcripción del vídeo.');
+      } else {
+        updateFeedback('⏳ Transcribiendo... por favor espera...');
+      }
+    } catch (err) {
+      clearInterval(interval);
+      updateFeedback('❌ Error al consultar el estado de transcripción.');
+    }
+  }, 5000);
+}
+
 
 
 

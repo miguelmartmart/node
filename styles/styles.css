@@ -514,4 +514,44 @@
     background: #fff8dc;
   }
   
+  .video-preview {
+    border: 2px dashed #ccc;
+    padding: 10px;
+    margin-top: 15px;
+    border-radius: 8px;
+    background: #fafafa;
+  }
+  
+  .video-preview button {
+    margin-right: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  
+  .video-preview .confirm-upload {
+    background: #28a745;
+    color: white;
+  }
+  
+  .video-preview .cancel-upload {
+    background: #dc3545;
+    color: white;
+  }
+  
+
+  .copy-button {
+    background-color: #eef;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  .copy-button:hover {
+    background-color: #dde;
+  }
+
   
