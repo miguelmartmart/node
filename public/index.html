@@ -45,11 +45,11 @@
 
       <div class="actions" role="group" aria-label="Acciones">
         <input type="file" id="imageInput" accept="image/*" title="Seleccionar imagen">
-        <button title="Activar cámara" onclick="startCamera()">📷 Cámara</button>
-        <button title="Grabar audio" onclick="startRecording()">🎤 Grabar audio</button>
-        <button title="Detener audio" onclick="stopRecording()">⏹️ Detener audio</button>
-        <button title="Grabar video" onclick="startVideoRecording()">🎥 Grabar video</button>
-        <button title="Detener video" onclick="stopVideoRecording()">⏹️ Detener video</button>
+        <button id="start-camera" title="Activar cámara">📷 Cámara</button>
+        <button id="start-audio-recording" title="Grabar audio">🎤 Grabar audio</button>
+        <button id="stop-audio-recording" title="Detener audio">⏹️ Detener audio</button>
+        <button id="start-video-recording" title="Grabar video">🎥 Grabar video</button>
+        <button id="stop-video-recording" title="Detener video">⏹️ Detener video</button>
       </div>
 
       <div class="input-bar">
@@ -94,13 +94,39 @@
   </aside>
 
   <!-- Carga FFmpeg desde CDN oficial -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+  <script src="/ffmpeg/ffmpeg.min.js"></script>
 
   <!-- Scripts principales -->
-  <script src="js/ffmpeg-utils.js"></script>
-  <script src="js/media-handlers.js"></script>
-  <script src="js/ui-utils.js"></script>
   <script src="js/favorites-history.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/script-recursos.js"></script>
+<!-- Módulos principales -->
+<script type="module">
+  // Espera a que FFmpeg esté cargado antes de importar los módulos
+  window.waitForFFmpeg = async () => {
+    try {
+      await new Promise((resolve) => {
+        const interval = setInterval(() => {
+          if (typeof FFmpegWASM !== 'undefined') {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100);
+      });
+
+      console.log('FFmpeg cargado correctamente. Iniciando módulos...', typeof FFmpegWASM);
+
+      // Importa los módulos después de que FFmpeg esté listo
+      import('./js/ffmpeg-utils.js');
+      import('./js/media-handlers.js');
+      import('./js/ui-utils.js');
+      import('./js/main.js');
+    } catch (error) {
+      console.error('Error al cargar FFmpegWASM:', error);
+    }
+  };
+
+  // Inicia la carga de FFmpeg
+  window.waitForFFmpeg();
+</script>
 </body>
 </html>

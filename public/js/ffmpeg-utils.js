@@ -1,5 +1,7 @@
-let ffmpegLoaded = false;
-let ffmpegInstance;
+
+export let ffmpegLoaded = false;
+export let ffmpegInstance;
+let loadAttempts;
 const MAX_LOAD_ATTEMPTS = 3;
 
 /**
@@ -11,9 +13,14 @@ export async function loadFFmpeg() {
   console.log(`[${loadAttempts + 1}] Intentando cargar FFmpeg...`);
   
   try {
-    const { createFFmpeg, fetchFile } = FFmpeg;
+
+        // Espera a que FFmpeg esté disponible
+        if (typeof FFmpegWASM === 'undefined') {
+          throw new Error('FFmpeg no está definido. ¿Se cargó correctamente desde el CDN?');
+        }
+    const { createFFmpeg, fetchFile } = FFmpegWASM;
     ffmpegInstance = createFFmpeg({
-      corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
+      corePath: '/ffmpeg/ffmpeg-core.js',
       log: true
     });
 

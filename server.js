@@ -28,9 +28,15 @@ app.use((req, res, next) => {
   next();
 });
 app.use(bodyParser.json());
-app.use('/ffmpeg', express.static(path.join(__dirname, 'public/ffmpeg')));
 
-app.use(express.static('.')); // asegúrate de que sea "public"
+
+// Servir archivos estáticos desde /public
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Ruta principal
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 
 const upload = multer({ dest: 'uploads/' })
