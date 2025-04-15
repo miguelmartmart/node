@@ -21,9 +21,17 @@ const __dirname = dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3001
 
-app.use(cors())
-app.use(bodyParser.json())
-app.use(express.static('.'))
+app.use(cors()); // ya lo tienes
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
+app.use(bodyParser.json());
+app.use('/ffmpeg', express.static(path.join(__dirname, 'public/ffmpeg')));
+
+app.use(express.static('.')); // asegúrate de que sea "public"
+
 
 const upload = multer({ dest: 'uploads/' })
 const uploadVideo = multer({ dest: 'uploads/' })

@@ -10,7 +10,6 @@
 </head>
 
 <body>
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.5/dist/ffmpeg.min.js"></script>
 
 <!-- Menú sticky -->
 <nav class="navbar">
@@ -108,8 +107,17 @@
   </section>
 </aside>
 
+<!-- ⚠️ Carga FFmpeg desde CDN o local -->
+<!-- FFmpeg core desde tu propio servidor 
+<script src="/ffmpeg/ffmpeg-core.js"></script>
+<script src="/ffmpeg/ffmpeg-core.wasm"></script>
+<script src="/ffmpeg/ffmpeg-core.worker.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+-->
+<!-- Usa la versión estable más reciente desde CDN oficial -->
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
 
-  <script src="js/script.js"></script>
+<script src="js/script.js"></script>
   <script src="js/favorites-history.js"></script>
 
 </body>
