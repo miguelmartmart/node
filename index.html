@@ -10,40 +10,35 @@
 </head>
 
 <body>
-
-<!-- Menú sticky -->
-<nav class="navbar">
-  <div class="logo-title">
-    <a href="https://empresaia.onrender.com/" target="_blank">
-      <img src="images/logos/favicon.webp" alt="Logo" class="main-logo">
-    </a>
-
-    <a href="https://empresaia.onrender.com/" target="_blank" class="nav-title">Software<span>para</span>empresas</a>
-  </div>
-  <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú">
-    <i class="fas fa-bars"></i>
-  </button>
-  <ul class="nav-links" id="nav-links">
-    <li><a href="index.html">Inicio</a></li>
-    <li><a href="recursos.html">Recursos</a></li>
-  </ul>
-</nav>
-
-<main>
-  <!-- ✅ Contenido principal -->
-  <div class="container">
-
-    <header class="chat-header">
-      <a href="https://www.distritok.com/blog/aprende-a-tu-ritmo-en-nuestra-herramienta-de-formacion-online/" target="_blank">
-        <img src="images/logos/distritok.jpg" alt="Distrito K" class="logo">
+  <!-- Menú sticky -->
+  <nav class="navbar">
+    <div class="logo-title">
+      <a href="https://empresaia.onrender.com/" target="_blank">
+        <img src="images/logos/favicon.webp" alt="Logo" class="main-logo">
       </a>
+      <a href="https://empresaia.onrender.com/" target="_blank" class="nav-title">Software<span>para</span>empresas</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú">
+      <i class="fas fa-bars"></i>
+    </button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="recursos.html">Recursos</a></li>
+    </ul>
+  </nav>
 
-      <div>
-        <h1>Asistente <strong>SQL</strong> Conta & Obras</h1>
-        <p>Haz tu pregunta. Ej: “¿Cómo se da de alta un producto?”</p>
-      </div>
-    </header>
-
+  <main>
+    <!-- Contenido principal -->
+    <div class="container">
+      <header class="chat-header">
+        <a href="https://www.distritok.com/blog/aprende-a-tu-ritmo-en-nuestra-herramienta-de-formacion-online/" target="_blank">
+          <img src="images/logos/distritok.jpg" alt="Distrito K" class="logo">
+        </a>
+        <div>
+          <h1>Asistente <strong>SQL</strong> Conta & Obras</h1>
+          <p>Haz tu pregunta. Ej: “¿Cómo se da de alta un producto?”</p>
+        </div>
+      </header>
 
       <div class="chat" id="chat" aria-live="polite"></div>
       <div class="feedback" id="feedback">Esperando tu pregunta o contenido...</div>
@@ -62,17 +57,13 @@
         <button onclick="sendMessage()">Enviar</button>
       </div>
 
-
-    <section class="carousel" aria-label="Empresas colaboradoras">
-      <a href="https://www.juandediosclimatizacion.com/" target="_blank">
-        <img src="images/logos/jddc.jpg" alt="JDDC">
-      </a>
-    </section>
-
-
-  </div>
-
-</main>
+      <section class="carousel" aria-label="Empresas colaboradoras">
+        <a href="https://www.juandediosclimatizacion.com/" target="_blank">
+          <img src="images/logos/jddc.jpg" alt="JDDC">
+        </a>
+      </section>
+    </div>
+  </main>
 
   <footer>
     <p>&copy; 2025 Software para empresas.</p>
@@ -85,42 +76,31 @@
     </div>
   </footer>
 
+  <!-- Panel lateral de favoritos e historial -->
+  <button id="open-panel" class="fav-toggle" aria-label="Ver favoritos e historial">
+    <i class="fas fa-star"></i> Favoritos / Historial
+  </button>
+  <aside id="favorites-panel" class="favorites-panel hidden" aria-label="Panel de favoritos e historial">
+    <header>
+      <h2>⭐ Favoritos & Historial</h2>
+      <button id="close-panel" class="close-btn" aria-label="Cerrar panel">&times;</button>
+    </header>
+    <section class="search-bar">
+      <input type="text" id="search-favs" placeholder="Buscar respuesta o palabra clave...">
+    </section>
+    <section id="favorites-list" class="fav-list">
+      <p>Cargando favoritos...</p>
+    </section>
+  </aside>
 
-  <!-- Botón para abrir panel -->
-<button id="open-panel" class="fav-toggle" aria-label="Ver favoritos e historial">
-  <i class="fas fa-star"></i> Favoritos / Historial
-</button>
+  <!-- Carga FFmpeg desde CDN oficial -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
 
-<!-- Panel lateral oculto -->
-<aside id="favorites-panel" class="favorites-panel hidden" aria-label="Panel de favoritos e historial">
-  <header>
-    <h2>⭐ Favoritos & Historial</h2>
-    <button id="close-panel" class="close-btn" aria-label="Cerrar panel">&times;</button>
-  </header>
-
-  <section class="search-bar">
-    <input type="text" id="search-favs" placeholder="Buscar respuesta o palabra clave...">
-  </section>
-
-  <section id="favorites-list" class="fav-list">
-    <p>Cargando favoritos...</p>
-  </section>
-</aside>
-
-<!-- ⚠️ Carga FFmpeg desde CDN o local -->
-<!-- FFmpeg core desde tu propio servidor 
-<script src="/ffmpeg/ffmpeg-core.js"></script>
-<script src="/ffmpeg/ffmpeg-core.wasm"></script>
-<script src="/ffmpeg/ffmpeg-core.worker.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
--->
-<!-- Usa la versión estable más reciente desde CDN oficial -->
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
-
-<script src="js/script.js"></script>
+  <!-- Scripts principales -->
+  <script src="js/ffmpeg-utils.js"></script>
+  <script src="js/media-handlers.js"></script>
+  <script src="js/ui-utils.js"></script>
   <script src="js/favorites-history.js"></script>
-
+  <script src="js/main.js"></script>
 </body>
-
-
 </html>
